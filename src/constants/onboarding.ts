@@ -1,5 +1,5 @@
 
-export const WEBHOOK_URL = 'https://webhook-n8n-chop.zionwellcare.com/webhook-test/8879ca87-d68c-4904-ada3-a89766b8ba92';
+export const WEBHOOK_URL = 'https://webhook-n8n-chop.zionwellcare.com/webhook/8879ca87-d68c-4904-ada3-a89766b8ba92';
 
 export const ORGANIZATION_TYPES = [
   { value: 'ca-firm', label: 'CA Firm' },
