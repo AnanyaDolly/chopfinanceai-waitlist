@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,19 +19,17 @@ const OnboardingForm = () => {
     howDidYouHear: ''
   });
 
-  const [webhookUrl, setWebhookUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hardcoded webhook URL - change this for production
+  const WEBHOOK_URL = 'https://webhook-n8n-chop.zionwellcare.com/webhook-test/8879ca87-d68c-4904-ada3-a89766b8ba92';
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const sendToWebhook = async (data: typeof formData) => {
-    if (!webhookUrl.trim()) {
-      throw new Error('Webhook URL is required');
-    }
-
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,21 +54,14 @@ const OnboardingForm = () => {
 
     try {
       console.log('Form submitted:', formData);
+      console.log('Sending to webhook:', WEBHOOK_URL);
       
-      if (webhookUrl.trim()) {
-        console.log('Sending to webhook:', webhookUrl);
-        await sendToWebhook(formData);
-        
-        toast({
-          title: "Success!",
-          description: "Form submitted and data sent to webhook successfully.",
-        });
-      } else {
-        toast({
-          title: "Form Submitted",
-          description: "Form data logged to console. Add webhook URL to send to external service.",
-        });
-      }
+      await sendToWebhook(formData);
+      
+      toast({
+        title: "Success!",
+        description: "Form submitted successfully.",
+      });
       
       // Reset form after successful submission
       setFormData({
@@ -113,24 +103,6 @@ const OnboardingForm = () => {
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Webhook Configuration */}
-          <div className="space-y-2 mb-6 p-4 bg-gray-50 rounded-lg">
-            <Label htmlFor="webhookUrl" className="text-sm text-gray-600 font-medium">
-              Webhook URL (Optional)
-            </Label>
-            <Input
-              id="webhookUrl"
-              type="url"
-              placeholder="https://your-n8n-instance.com/webhook/your-webhook-id"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-            />
-            <p className="text-xs text-gray-500">
-              Enter your n8n webhook URL to automatically send form data to your workflow
-            </p>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* First Name and Last Name Row */}
             <div className="grid grid-cols-2 gap-4">
