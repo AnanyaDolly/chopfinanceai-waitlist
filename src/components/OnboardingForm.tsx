@@ -1,91 +1,14 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useOnboardingForm } from '@/hooks/useOnboardingForm';
+import { PersonalInfoSection } from '@/components/PersonalInfoSection';
+import { OrganizationInfoSection } from '@/components/OrganizationInfoSection';
+import { AdditionalInfoSection } from '@/components/AdditionalInfoSection';
 
 const OnboardingForm = () => {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    organizationName: '',
-    organizationType: '',
-    teamSize: '',
-    location: '',
-    howDidYouHear: ''
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Hardcoded webhook URL - change this for production
-  const WEBHOOK_URL = 'https://webhook-n8n-chop.zionwellcare.com/webhook-test/8879ca87-d68c-4904-ada3-a89766b8ba92';
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const sendToWebhook = async (data: typeof formData) => {
-    const response = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...data,
-        timestamp: new Date().toISOString(),
-        source: 'Chop Finance Onboarding Form'
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      console.log('Form submitted:', formData);
-      console.log('Sending to webhook:', WEBHOOK_URL);
-      
-      await sendToWebhook(formData);
-      
-      toast({
-        title: "Success!",
-        description: "Form submitted successfully.",
-      });
-      
-      // Reset form after successful submission
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        organizationName: '',
-        organizationType: '',
-        teamSize: '',
-        location: '',
-        howDidYouHear: ''
-      });
-      
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit form. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { formData, isSubmitting, handleInputChange, handleSubmit } = useOnboardingForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-100 via-emerald-50 to-cyan-100 flex items-center justify-center p-4">
@@ -104,149 +27,20 @@ const OnboardingForm = () => {
         
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* First Name and Last Name Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm text-gray-600">
-                  First Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="firstName"
-                  placeholder="Enter your first name"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-sm text-gray-600">
-                  Last Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="lastName"
-                  placeholder="Enter your last name"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email Address */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-gray-600">
-                Email address <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* Organization Name */}
-            <div className="space-y-2">
-              <Label htmlFor="organizationName" className="text-sm text-gray-600">
-                Organization Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="organizationName"
-                placeholder="Enter your organization name"
-                value={formData.organizationName}
-                onChange={(e) => handleInputChange('organizationName', e.target.value)}
-                className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* Organization Type and Team Size Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm text-gray-600">
-                  Organization Type <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.organizationType} onValueChange={(value) => handleInputChange('organizationType', value)}>
-                  <SelectTrigger className="border-gray-200 focus:border-teal-500 focus:ring-teal-500">
-                    <SelectValue placeholder="Select organization type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ca-firm">CA Firm</SelectItem>
-                    <SelectItem value="corporate">Corporate</SelectItem>
-                    <SelectItem value="law-firm">Law Firm</SelectItem>
-                    <SelectItem value="investment-bank">Investment Bank</SelectItem>
-                    <SelectItem value="consulting">Consulting</SelectItem>
-                    <SelectItem value="startup">Startup</SelectItem>
-                    <SelectItem value="government">Government</SelectItem>
-                    <SelectItem value="non-profit">Non-Profit</SelectItem>
-                    <SelectItem value="others">Others</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-gray-600">
-                  Team Size <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.teamSize} onValueChange={(value) => handleInputChange('teamSize', value)}>
-                  <SelectTrigger className="border-gray-200 focus:border-teal-500 focus:ring-teal-500">
-                    <SelectValue placeholder="Select team size..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 person</SelectItem>
-                    <SelectItem value="2-5">2-5 people</SelectItem>
-                    <SelectItem value="6-10">6-10 people</SelectItem>
-                    <SelectItem value="11-25">11-25 people</SelectItem>
-                    <SelectItem value="26-50">26-50 people</SelectItem>
-                    <SelectItem value="51-100">51-100 people</SelectItem>
-                    <SelectItem value="101-500">101-500 people</SelectItem>
-                    <SelectItem value="500+">500+ people</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm text-gray-600">
-                Location <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="location"
-                placeholder="Enter your location"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                required
-              />
-            </div>
-
-            {/* How did you hear about us */}
-            <div className="space-y-2">
-              <Label className="text-sm text-gray-600">
-                How did you hear about us?
-              </Label>
-              <Select value={formData.howDidYouHear} onValueChange={(value) => handleInputChange('howDidYouHear', value)}>
-                <SelectTrigger className="border-gray-200 focus:border-teal-500 focus:ring-teal-500">
-                  <SelectValue placeholder="Select how you heard about us..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="search-engine">Search Engine (Google, Bing, etc.)</SelectItem>
-                  <SelectItem value="social-media">Social Media</SelectItem>
-                  <SelectItem value="colleague-referral">Colleague Referral</SelectItem>
-                  <SelectItem value="industry-publication">Industry Publication</SelectItem>
-                  <SelectItem value="conference-event">Conference/Event</SelectItem>
-                  <SelectItem value="partner-referral">Partner Referral</SelectItem>
-                  <SelectItem value="advertisement">Advertisement</SelectItem>
-                  <SelectItem value="word-of-mouth">Word of Mouth</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <PersonalInfoSection 
+              formData={formData}
+              onInputChange={handleInputChange}
+            />
+            
+            <OrganizationInfoSection 
+              formData={formData}
+              onInputChange={handleInputChange}
+            />
+            
+            <AdditionalInfoSection 
+              formData={formData}
+              onInputChange={handleInputChange}
+            />
 
             {/* Submit Button */}
             <Button 
