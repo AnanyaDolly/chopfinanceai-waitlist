@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const OnboardingForm = () => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -18,14 +20,81 @@ const OnboardingForm = () => {
     howDidYouHear: ''
   });
 
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const sendToWebhook = async (data: typeof formData) => {
+    if (!webhookUrl.trim()) {
+      throw new Error('Webhook URL is required');
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...data,
+        timestamp: new Date().toISOString(),
+        source: 'Chop Finance Onboarding Form'
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Handle form submission here
+    setIsSubmitting(true);
+
+    try {
+      console.log('Form submitted:', formData);
+      
+      if (webhookUrl.trim()) {
+        console.log('Sending to webhook:', webhookUrl);
+        await sendToWebhook(formData);
+        
+        toast({
+          title: "Success!",
+          description: "Form submitted and data sent to webhook successfully.",
+        });
+      } else {
+        toast({
+          title: "Form Submitted",
+          description: "Form data logged to console. Add webhook URL to send to external service.",
+        });
+      }
+      
+      // Reset form after successful submission
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        organizationName: '',
+        organizationType: '',
+        teamSize: '',
+        location: '',
+        howDidYouHear: ''
+      });
+      
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit form. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -44,6 +113,24 @@ const OnboardingForm = () => {
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {/* Webhook Configuration */}
+          <div className="space-y-2 mb-6 p-4 bg-gray-50 rounded-lg">
+            <Label htmlFor="webhookUrl" className="text-sm text-gray-600 font-medium">
+              Webhook URL (Optional)
+            </Label>
+            <Input
+              id="webhookUrl"
+              type="url"
+              placeholder="https://your-n8n-instance.com/webhook/your-webhook-id"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              className="border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+            />
+            <p className="text-xs text-gray-500">
+              Enter your n8n webhook URL to automatically send form data to your workflow
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* First Name and Last Name Row */}
             <div className="grid grid-cols-2 gap-4">
@@ -192,9 +279,10 @@ const OnboardingForm = () => {
             {/* Submit Button */}
             <Button 
               type="submit" 
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-6 rounded-lg mt-6 transition-colors duration-200"
+              disabled={isSubmitting}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-6 rounded-lg mt-6 transition-colors duration-200 disabled:opacity-50"
             >
-              Continue
+              {isSubmitting ? 'Submitting...' : 'Continue'}
             </Button>
           </form>
         </CardContent>
